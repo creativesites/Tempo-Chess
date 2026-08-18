@@ -8,9 +8,9 @@ import {
   PieceSymbol,
   Color
 } from '../../types';
-import { OPENING_TACTICAL_DRILLS, getDrillsForWeakestOpenings, generateOpeningReport } from '../../chess/openingDrills';
+import { OPENING_TACTICAL_DRILLS, getDrillsForWeakestOpenings, generateOpeningReport } from '@tempo/openings';
 import { ChessBoard } from '../chess/ChessBoard';
-import { ChessGameWrapper } from '../../chess/rules';
+import { ChessGameWrapper } from '@tempo/chess';
 import { useTheme } from '../../context/ThemeContext';
 import { sounds } from '../../utils/audio';
 import { AppStorage } from '../../database/storage';

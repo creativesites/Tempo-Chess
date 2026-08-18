@@ -1,4 +1,4 @@
-import { OpeningLesson } from '../types';
+import { OpeningLesson } from './types';
 
 export const STRUCTURED_OPENING_LESSONS: OpeningLesson[] = [
   {

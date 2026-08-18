@@ -1,6 +1,6 @@
 import initSqlJs, { Database } from 'sql.js';
 import { SavedGameRecord, GameReview, Color } from '../types';
-import { PgnUtils } from '../chess/pgn';
+import { PgnUtils } from '@tempo/chess';
 
 const SQLITE_STORAGE_KEY = 'tempo_sqlite_game_history_bin_v1';
 const SQLITE_BACKUP_JSON_KEY = 'tempo_game_history_records_v1';

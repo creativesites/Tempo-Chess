@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SavedGameRecord, Color } from '../../types';
 import { useTheme } from '../../context/ThemeContext';
-import { PgnUtils } from '../../chess/pgn';
+import { PgnUtils } from '@tempo/chess';
 import { Chess } from 'chess.js';
 import { ChessBoard } from '../chess/ChessBoard';
 import {

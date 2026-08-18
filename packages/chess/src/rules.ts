@@ -1,5 +1,5 @@
 import { Chess, Square as ChessJsSquare, Move as ChessJsMove, PieceSymbol as ChessJsPieceSymbol } from 'chess.js';
-import { Square, PieceSymbol, Color, MaterialState, TacticalState, StrategicState, ChessMove, OpeningContext } from '../types';
+import { Square, PieceSymbol, Color, MaterialState, TacticalState, StrategicState, ChessMove, OpeningContext } from '@tempo/shared';
 import { OPENING_TREES } from './openingTree';
 import { OPENING_BOOK } from './openingBook';
 

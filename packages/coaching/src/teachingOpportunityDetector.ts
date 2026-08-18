@@ -1,17 +1,15 @@
+import { GameContext, ChessMove, Color } from '@tempo/shared';
+import { PlayerModel } from '@tempo/player-model';
+import { detectOpening } from '@tempo/chess';
 import {
-  GameContext,
-  CoachIntervention,
-  ChessMove,
   GameReview,
   CriticalMoment,
-  PlayerModel,
-  Color,
   GamePhaseNarrative,
   ScorecardGrade,
   AlternativeVariation,
   ThinkingFailureInfo
-} from '../types';
-import { detectOpening } from '../chess/openings';
+} from '@tempo/game-review';
+import { CoachIntervention } from './types';
 
 export class TeachingOpportunityDetector {
   /**

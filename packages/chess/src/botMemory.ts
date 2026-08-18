@@ -1,4 +1,6 @@
-import { BotProfile, Square, Color, ChessMove, PlayerModel } from '../types';
+import { Square, Color, ChessMove } from '@tempo/shared';
+import { PlayerModel } from '@tempo/player-model';
+import { BotProfile } from './types';
 import { OPENING_BOOK } from './openingBook';
 
 export interface BotMemoryRecord {

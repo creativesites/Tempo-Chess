@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BotProfile, BotCategory } from '../../types';
-import { CHESS_BOTS, getBotsByCategory } from '../../chess/bots';
-import { BotAdaptiveMemory } from '../../chess/botMemory';
+import { CHESS_BOTS, getBotsByCategory } from '@tempo/chess';
+import { BotAdaptiveMemory } from '@tempo/chess';
 import { useTheme } from '../../context/ThemeContext';
 import {
   Bot,

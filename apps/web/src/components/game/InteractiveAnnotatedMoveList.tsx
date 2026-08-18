@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { ChessMove, Color, Square, PieceSymbol } from '../../types';
 import { useTheme } from '../../context/ThemeContext';
 import { ChessBoard, BoardArrow } from '../chess/ChessBoard';
-import { ChessGameWrapper } from '../../chess/rules';
+import { ChessGameWrapper } from '@tempo/chess';
 import {
   ListOrdered,
   AlertTriangle,

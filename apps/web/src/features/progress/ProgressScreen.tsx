@@ -5,7 +5,7 @@ import { PostGameReviewModal } from '../../components/game/PostGameReviewModal';
 import { SqliteGameHistoryModal } from '../../components/game/SqliteGameHistoryModal';
 import { GameDetailModal } from '../../components/game/GameDetailModal';
 import { OpeningTrainer } from '../../components/openings/OpeningTrainer';
-import { generateOpeningReport } from '../../chess/openingDrills';
+import { generateOpeningReport } from '@tempo/openings';
 import { useTheme } from '../../context/ThemeContext';
 import {
   TrendingUp,

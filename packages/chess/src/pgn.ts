@@ -1,4 +1,4 @@
-import { ChessMove, Color, GameReview } from '../types';
+import { ChessMove, Color } from '@tempo/shared';
 
 export interface PgnMetadata {
   event?: string;

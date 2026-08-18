@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SavedGameRecord, GameReview, ChessMove } from '../../types';
 import { SQLiteGameHistoryStore } from '../../database/sqliteStore';
 import { useTheme } from '../../context/ThemeContext';
-import { PgnUtils } from '../../chess/pgn';
+import { PgnUtils } from '@tempo/chess';
 import { Chess } from 'chess.js';
 import {
   Database,

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { DailyTrainingPlan, TrainingExercise, PlayerModel, Square, PieceSymbol } from '../../types';
 import { ChessBoard } from '../../components/chess/ChessBoard';
-import { ChessGameWrapper } from '../../chess/rules';
+import { ChessGameWrapper } from '@tempo/chess';
 import { AppStorage } from '../../database/storage';
 import { sounds } from '../../utils/audio';
 import { useTheme } from '../../context/ThemeContext';

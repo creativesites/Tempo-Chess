@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Chess, Square as ChessJsSquare, Move as ChessJsMove } from 'chess.js';
 import { Square, Color, PieceSymbol } from '../../types';
 import { BoardArrow } from '../chess/ChessBoard';
-import { PIECE_VALUES } from '../../chess/rules';
+import { PIECE_VALUES } from '@tempo/chess';
 import { useTheme } from '../../context/ThemeContext';
 import { ShieldAlert, AlertTriangle, Eye, EyeOff, Crosshair } from 'lucide-react';
 

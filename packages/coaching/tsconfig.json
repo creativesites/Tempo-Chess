@@ -1,0 +1,11 @@
+{
+  "extends": "../shared/tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@tempo/shared": ["../shared/src/index.ts"],
+      "@tempo/chess": ["../chess/src/index.ts"],
+      "@tempo/player-model": ["../player-model/src/index.ts"],
+      "@tempo/game-review": ["../game-review/src/index.ts"]
+    }
+  }
+}

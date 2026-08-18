@@ -1,4 +1,5 @@
-import { PlayerModel, RepertoireItem, Color } from '../types';
+import { Color } from '@tempo/shared';
+import { PlayerModel, RepertoireItem } from '@tempo/player-model';
 
 export type PlaystyleArchetype =
   | 'aggressive_tactician'

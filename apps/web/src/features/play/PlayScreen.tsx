@@ -12,9 +12,9 @@ import {
   SavedGameRecord,
   OpeningContext
 } from '../../types';
-import { ChessGameWrapper } from '../../chess/rules';
-import { defaultChessEngine } from '../../chess/engine';
-import { TeachingOpportunityDetector } from '../../ai/teaching';
+import { ChessGameWrapper } from '@tempo/chess';
+import { defaultChessEngine } from '@tempo/chess';
+import { TeachingOpportunityDetector } from '@tempo/coaching';
 import { AppStorage } from '../../database/storage';
 import { sounds } from '../../utils/audio';
 import { ChessBoard, BoardArrow } from '../../components/chess/ChessBoard';
@@ -23,11 +23,11 @@ import { MoveHistory } from '../../components/chess/MoveHistory';
 import { VisualMoveTimer } from '../../components/chess/VisualMoveTimer';
 import { ChessDotComCoachBanner } from '../../components/coach/ChessDotComCoachBanner';
 import { CoachInsightOverlay, EvalShiftData } from '../../components/coach/CoachInsightOverlay';
-import { EvalShiftDetector } from '../../chess/evalShiftDetector';
+import { EvalShiftDetector } from '@tempo/game-review';
 import { PostGameReviewModal } from '../../components/game/PostGameReviewModal';
 import { BotSelectorModal } from '../../components/game/BotSelectorModal';
-import { CHESS_BOTS, DEFAULT_BOT } from '../../chess/bots';
-import { BotAdaptiveMemory } from '../../chess/botMemory';
+import { CHESS_BOTS, DEFAULT_BOT } from '@tempo/chess';
+import { BotAdaptiveMemory } from '@tempo/chess';
 import { useTheme } from '../../context/ThemeContext';
 import {
   RotateCcw,

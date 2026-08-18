@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { OpeningLesson, OpeningTreeNode, Color, Square, PieceSymbol } from '../../types';
-import { STRUCTURED_OPENING_LESSONS } from '../../chess/openingLessons';
-import { OPENING_TREES } from '../../chess/openingTree';
+import { STRUCTURED_OPENING_LESSONS } from '@tempo/openings';
+import { OPENING_TREES } from '@tempo/chess';
 import { ChessBoard } from '../../components/chess/ChessBoard';
-import { ChessGameWrapper } from '../../chess/rules';
+import { ChessGameWrapper } from '@tempo/chess';
 import { useTheme } from '../../context/ThemeContext';
 import { sounds } from '../../utils/audio';
 import {

@@ -1,5 +1,6 @@
 import { Chess, Move as ChessJsMove } from 'chess.js';
-import { ChessMove, EngineAnalysis, EngineOptions, MoveClassification, Square, PieceSymbol, Color, BotProfile } from '../types';
+import { ChessMove, MoveClassification, Square, PieceSymbol, Color } from '@tempo/shared';
+import { EngineAnalysis, EngineOptions, BotProfile } from './types';
 import { PIECE_VALUES } from './rules';
 import { OPENING_BOOK } from './openingBook';
 import { DEFAULT_BOT } from './bots';

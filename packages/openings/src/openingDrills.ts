@@ -1,4 +1,6 @@
-import { OpeningTacticalDrill, OpeningReportSummary, OpeningUnderstandingProfile, PlayerModel, Color } from '../types';
+import { Color } from '@tempo/shared';
+import { PlayerModel, OpeningUnderstandingProfile } from '@tempo/player-model';
+import { OpeningTacticalDrill, OpeningReportSummary } from './types';
 
 export const OPENING_TACTICAL_DRILLS: OpeningTacticalDrill[] = [
   // 1. Sicilian Defense: Countering the c-file & e4 weakness

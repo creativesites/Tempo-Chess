@@ -1,4 +1,4 @@
-import { BotProfile, BotCategory } from '../types';
+import { BotProfile, BotCategory } from './types';
 
 export const CHESS_BOTS: BotProfile[] = [
   // -------------------------------------------------------------

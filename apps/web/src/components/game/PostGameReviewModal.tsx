@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { ChessBoard } from '../chess/ChessBoard';
-import { ChessGameWrapper } from '../../chess/rules';
+import { ChessGameWrapper } from '@tempo/chess';
 import { InteractiveAnnotatedMoveList } from './InteractiveAnnotatedMoveList';
 
 interface PostGameReviewModalProps {

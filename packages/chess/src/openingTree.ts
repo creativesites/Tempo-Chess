@@ -1,4 +1,4 @@
-import { OpeningTreeNode } from '../types';
+import { OpeningTreeNode } from './types';
 
 export const OPENING_TREES: OpeningTreeNode[] = [
   {

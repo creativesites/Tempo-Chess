@@ -1,4 +1,4 @@
-import { OpeningContext } from '../types';
+import { OpeningContext } from '@tempo/shared';
 
 export interface OpeningEntry {
   eco: string;

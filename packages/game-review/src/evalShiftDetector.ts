@@ -1,7 +1,8 @@
-import { Chess, Square as ChessJsSquare } from 'chess.js';
-import { ChessMove, Color, PlayerModel, Square, PieceSymbol } from '../types';
-import { defaultChessEngine } from './engine';
-import { EvalShiftData, EvalShiftType } from '../components/coach/CoachInsightOverlay';
+import { Chess } from 'chess.js';
+import { ChessMove, Color, Square, PieceSymbol } from '@tempo/shared';
+import { PlayerModel } from '@tempo/player-model';
+import { defaultChessEngine } from '@tempo/chess';
+import { EvalShiftData, EvalShiftType } from './types';
 
 export class EvalShiftDetector {
   /**

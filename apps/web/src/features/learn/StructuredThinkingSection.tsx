@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { ThinkingFrameworkStep, ThinkingExercise, Square, PieceSymbol } from '../../types';
-import { THINKING_FRAMEWORK_STEPS, STRUCTURED_THINKING_EXERCISES } from '../../chess/thinkingFramework';
+import { THINKING_FRAMEWORK_STEPS, STRUCTURED_THINKING_EXERCISES } from '@tempo/coaching';
 import { ChessBoard } from '../../components/chess/ChessBoard';
-import { ChessGameWrapper } from '../../chess/rules';
+import { ChessGameWrapper } from '@tempo/chess';
 import { useTheme } from '../../context/ThemeContext';
 import { sounds } from '../../utils/audio';
 import {

@@ -1,4 +1,4 @@
-import { ThinkingFrameworkStep, ThinkingExercise } from '../types';
+import { ThinkingFrameworkStep, ThinkingExercise } from './types';
 
 export const THINKING_FRAMEWORK_STEPS: ThinkingFrameworkStep[] = [
   {

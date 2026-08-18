@@ -3,9 +3,9 @@ import { PlayerModel, Color, RepertoireItem, Square } from '../../types';
 import {
   generatePersonalizedRepertoire,
   RepertoireRecommendation
-} from '../../chess/repertoireRecommender';
+} from '@tempo/openings';
 import { ChessBoard } from '../../components/chess/ChessBoard';
-import { ChessGameWrapper } from '../../chess/rules';
+import { ChessGameWrapper } from '@tempo/chess';
 import { useTheme } from '../../context/ThemeContext';
 import { sounds } from '../../utils/audio';
 import { AppStorage } from '../../database/storage';

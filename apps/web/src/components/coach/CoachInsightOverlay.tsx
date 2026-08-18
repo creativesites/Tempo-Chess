@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Square } from '../../types';
+import { EvalShiftData, EvalShiftType } from '@tempo/game-review';
 import { BoardArrow } from '../chess/ChessBoard';
 import { useTheme } from '../../context/ThemeContext';
 import { sounds } from '../../utils/audio';
@@ -16,24 +17,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-export type EvalShiftType = 'blunder' | 'mistake' | 'missed_opportunity' | 'breakthrough' | 'tactical_alarm';
-
-export interface EvalShiftData {
-  id: string;
-  type: EvalShiftType;
-  evalBeforeCp: number;
-  evalAfterCp: number;
-  deltaCp: number;
-  userElo: number;
-  hintSentence: string;
-  category: 'tactics' | 'king_safety' | 'hanging_piece' | 'fork_pin' | 'pawn_structure' | 'piece_activity';
-  suggestedMoveSan?: string;
-  fromSquare?: Square;
-  toSquare?: Square;
-  dangerSquares?: Square[];
-  isPlayerMove: boolean;
-  timestamp: number;
-}
+export type { EvalShiftData, EvalShiftType };
 
 interface CoachInsightOverlayProps {
   shiftData: EvalShiftData | null;

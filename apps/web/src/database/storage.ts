@@ -1,6 +1,6 @@
 import { PlayerModel, GameReview, DailyTrainingPlan, BoardTheme, UIThemeMode, UIThemeConfig, SavedGameRecord } from '../types';
 import { SQLiteGameHistoryStore } from './sqliteStore';
-import { PgnUtils } from '../chess/pgn';
+import { PgnUtils } from '@tempo/chess';
 
 const STORAGE_KEYS = {
   PLAYER_MODEL: 'tempo_player_model_v1',
