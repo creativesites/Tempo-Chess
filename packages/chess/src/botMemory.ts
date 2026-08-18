@@ -92,15 +92,18 @@ export class BotAdaptiveMemory {
       memory.lastPlayedOpening = openingName;
     }
 
-    // Identify user weaknesses to exploit in future matches
+    // Identify user weaknesses to exploit in future matches. A brand-new
+    // player model genuinely has no skills tracked yet (see
+    // createEmptyPlayerModel) — these categories only exist once real
+    // games have produced real evidence, so each one is optional here.
     if (playerModel) {
-      if (playerModel.skills.king_safety.score < 55) {
+      if ((playerModel.skills.king_safety?.score ?? 100) < 55) {
         memory.userWeaknessesObserved['king_safety'] = (memory.userWeaknessesObserved['king_safety'] || 0) + 1;
       }
-      if (playerModel.skills.tactics.score < 55) {
+      if ((playerModel.skills.tactics?.score ?? 100) < 55) {
         memory.userWeaknessesObserved['tactical_pins'] = (memory.userWeaknessesObserved['tactical_pins'] || 0) + 1;
       }
-      if (playerModel.skills.endgames.score < 55) {
+      if ((playerModel.skills.endgames?.score ?? 100) < 55) {
         memory.userWeaknessesObserved['endgame_grind'] = (memory.userWeaknessesObserved['endgame_grind'] || 0) + 1;
       }
     }

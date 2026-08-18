@@ -77,6 +77,25 @@ export class ChessGameWrapper {
     return this.chess.get(square as ChessJsSquare);
   }
 
+  /** Reconstructs our ChessMove[] shape from chess.js's own move stack —
+   * useful for callers (e.g. after a takeback) that need to resync their
+   * tracked history to what the engine actually has. */
+  public getMoveHistory(): ChessMove[] {
+    return this.chess.history({ verbose: true }).map((m) => ({
+      from: m.from as Square,
+      to: m.to as Square,
+      piece: m.piece as PieceSymbol,
+      color: m.color as Color,
+      san: m.san,
+      lan: m.lan,
+      captured: m.captured as PieceSymbol | undefined,
+      promotion: m.promotion as PieceSymbol | undefined,
+      isCheck: m.san.includes('+') || m.san.includes('#'),
+      isCheckmate: m.san.includes('#'),
+      fenAfter: m.after,
+    }));
+  }
+
   public makeMove(from: Square, to: Square, promotion: PieceSymbol = 'q'): ChessMove | null {
     try {
       const moveResult = this.chess.move({
@@ -103,6 +122,22 @@ export class ChessGameWrapper {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Undoes the last move and returns it (chess.js's own representation),
+   * or null if there was nothing to undo.
+   */
+  public undoMove(): ChessJsMove | null {
+    return this.chess.undo();
+  }
+
+  public getMoveCount(): number {
+    return this.chess.history().length;
+  }
+
+  public getPgn(): string {
+    return this.chess.pgn();
   }
 
   public identifyOpening(): OpeningContext | null {

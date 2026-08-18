@@ -54,7 +54,16 @@ export class TeachingOpportunityDetector {
     }
 
     // 2. Player Move Feedback (Celebrating mature decisions or alerting to cognitive blindspots)
-    if (lastMove) {
+    //
+    // Critical: this function is called after EVERY move — the player's and
+    // the bot opponent's alike (the caller needs opponent moves evaluated
+    // too, e.g. for opening-deviation detection above). Every rule in this
+    // block speaks directly to the player ("you played...", "your queen...")
+    // so it must never fire on a move the player didn't make — otherwise
+    // the coach ends up praising or scolding the player for the bot's move.
+    const lastMoveWasPlayers = lastMove && lastMove.color === context.playerContext.color;
+
+    if (lastMove && lastMoveWasPlayers) {
       // Castling or securing king
       if (lastMove.san === 'O-O' || lastMove.san === '0-0') {
         return {
@@ -125,8 +134,12 @@ export class TeachingOpportunityDetector {
       }
     }
 
-    // 3. Proactive king safety reminder
-    if (isPlayerTurn && context.tacticalState.kingExposedWhite && moveCount >= 10 && moveCount % 8 === 0) {
+    // 3. Proactive king safety reminder — checks the PLAYER's own king, not
+    // always White's (a Black player's exposure lives in kingExposedBlack).
+    const playerKingExposed = context.playerContext.color === 'w'
+      ? context.tacticalState.kingExposedWhite
+      : context.tacticalState.kingExposedBlack;
+    if (isPlayerTurn && playerKingExposed && moveCount >= 10 && moveCount % 8 === 0) {
       return {
         id: `king-safe-${moveCount}`,
         level: 'gentle',
