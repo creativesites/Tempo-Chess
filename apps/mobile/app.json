@@ -42,7 +42,8 @@
         }
       ],
       "expo-sqlite",
-      "expo-audio"
+      "expo-audio",
+      "llama.rn"
     ],
     "experiments": {
       "typedRoutes": true,

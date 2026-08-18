@@ -7,3 +7,4 @@ export * from './pgn';
 export * from './openingBook';
 export * from './openingTree';
 export * from './openingDetection';
+export * from './nativeChessEngine';
