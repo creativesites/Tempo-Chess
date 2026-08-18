@@ -9,9 +9,11 @@ import {
 } from '@tempo/chess';
 import { CoachIntervention, TeachingOpportunityDetector } from '@tempo/coaching';
 import { EvalShiftData, EvalShiftDetector } from '@tempo/game-review';
-import { PlayerModel } from '@tempo/player-model';
+import { createEmptyPlayerModel, PlayerModel } from '@tempo/player-model';
 import { ChessMove, Color, GameContext, OpeningContext, PieceSymbol, Square } from '@tempo/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { getPlayerModel, recordGameResult, saveGame, setSetting, SettingsKeys } from '@/storage';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const TIME_CONTROL_SECONDS = 600;
@@ -37,7 +39,7 @@ function toWhitePerspective(evalCp: number, fen: string): number {
   return sideToMove === 'w' ? evalCp : -evalCp;
 }
 
-export function useLiveGame(playerModel: PlayerModel, playerName: string) {
+export function useLiveGame(playerName: string) {
   const wrapperRef = useRef(new ChessGameWrapper());
   const processingRef = useRef(false);
 
@@ -54,6 +56,25 @@ export function useLiveGame(playerModel: PlayerModel, playerName: string) {
   const [summary, setSummary] = useState<LiveGameSummary | null>(null);
   const [playerTimeSec, setPlayerTimeSec] = useState(TIME_CONTROL_SECONDS);
   const [opponentTimeSec, setOpponentTimeSec] = useState(TIME_CONTROL_SECONDS);
+
+  // Real, persisted player model — loaded from SQLite on mount. Starts as
+  // a genuinely empty model (never fabricated demo stats) while the
+  // async load resolves, then swaps in whatever is actually on disk.
+  const [playerModel, setPlayerModel] = useState<PlayerModel>(() => createEmptyPlayerModel(playerName));
+  const [isPlayerModelLoaded, setIsPlayerModelLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPlayerModel(playerName).then((loaded) => {
+      if (!cancelled) {
+        setPlayerModel(loaded);
+        setIsPlayerModelLoaded(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [playerName]);
 
   const turn = wrapperRef.current.getTurn();
   const isPlayerTurn = isGameActive && !isBotThinking && turn === playerColor;
@@ -119,8 +140,35 @@ export function useLiveGame(playerModel: PlayerModel, playerName: string) {
         blunderCount,
         mistakeCount,
       });
+
+      const openingName = currentOpening
+        ? `${currentOpening.name}${currentOpening.variation ? `: ${currentOpening.variation}` : ''}`
+        : null;
+
+      saveGame({
+        id: `game_${Date.now()}`,
+        pgn: wrapperRef.current.getPgn(),
+        fen: wrapperRef.current.getFen(),
+        result,
+        playerColor,
+        playerName,
+        opponentBotId: selectedBot.id,
+        opponentName: selectedBot.name,
+        opponentRating: selectedBot.rating,
+        openingName,
+        playerAccuracyPercent: accuracy,
+        blunderCount,
+        mistakeCount,
+        dateIso: new Date().toISOString(),
+        timestamp: Date.now(),
+        moveHistory: history,
+      }).catch((e) => console.error('Failed to save game', e));
+
+      recordGameResult(playerName, result)
+        .then((updated) => setPlayerModel(updated))
+        .catch((e) => console.error('Failed to record game result', e));
     },
-    [currentOpening, playerColor, playerModel, selectedBot.id]
+    [currentOpening, playerColor, playerModel, playerName, selectedBot]
   );
 
   /**
@@ -296,7 +344,10 @@ export function useLiveGame(playerModel: PlayerModel, playerName: string) {
       setSummary(null);
       setPlayerTimeSec(TIME_CONTROL_SECONDS);
       setOpponentTimeSec(TIME_CONTROL_SECONDS);
-      if (bot) setSelectedBot(bot);
+      if (bot) {
+        setSelectedBot(bot);
+        setSetting(SettingsKeys.SELECTED_BOT_ID, bot.id).catch((e) => console.error('Failed to persist selected bot', e));
+      }
 
       if (color === 'b') {
         setTimeout(() => triggerBotMove([]), 400);
@@ -309,6 +360,8 @@ export function useLiveGame(playerModel: PlayerModel, playerName: string) {
     fen,
     playerColor,
     playerName,
+    playerModel,
+    isPlayerModelLoaded,
     moveHistory,
     lastMove,
     selectedBot,

@@ -20,4 +20,9 @@ config.resolver.sourceExts = [...config.resolver.sourceExts, 'ts', 'tsx'].filter
 );
 config.resolver.disableHierarchicalLookup = false;
 
+// expo-sqlite's web backend (wa-sqlite compiled to WASM) imports its
+// module as a static asset — Metro's default assetExts doesn't include
+// .wasm, so without this the web bundle fails to resolve it.
+config.resolver.assetExts = [...config.resolver.assetExts, 'wasm'];
+
 module.exports = config;

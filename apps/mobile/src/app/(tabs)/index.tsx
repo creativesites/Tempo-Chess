@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { createEmptyPlayerModel } from '@tempo/player-model';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View, useColorScheme, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -27,11 +26,10 @@ export default function PlayScreen() {
   const { width } = useWindowDimensions();
   const boardSize = Math.min(width - Spacing.four * 2, 520);
 
-  // No persistence layer yet (that's Phase 6) — a real, honest, empty
-  // player model rather than fabricated demo stats. "You" until the
-  // player sets a name in Profile.
-  const playerModel = useMemo(() => createEmptyPlayerModel('You'), []);
-  const game = useLiveGame(playerModel, 'You');
+  // "You" until the player sets a real name in Profile. useLiveGame owns
+  // loading/saving the real, persisted player model (SQLite) — no
+  // fabricated demo stats, ever.
+  const game = useLiveGame('You');
   const [hasStarted, setHasStarted] = useState(false);
 
   if (!hasStarted) {
@@ -116,7 +114,7 @@ export default function PlayScreen() {
               <View style={styles.nameRow}>
                 <ThemedText type="smallBold">{game.playerName}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {playerModel.gamesPlayed > 0 ? playerModel.ratingEstimate : 'New player'}
+                  {game.playerModel.gamesPlayed > 0 ? game.playerModel.ratingEstimate : 'New player'}
                 </ThemedText>
               </View>
               <CapturedRow captured={playerCapture} pieceColor={game.playerColor} advantage={playerAdvantage} />
