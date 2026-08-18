@@ -1,0 +1,6 @@
+{
+  "name": "Tempo Learn Chess (Web Prototype)",
+  "description": "Reference web prototype for Tempo Chess — an offline-first AI chess coach. Domain logic (chess engine, openings, coaching, player model, game review) has been extracted to packages/* and is being migrated to the Expo mobile app in apps/mobile, which is the production target.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

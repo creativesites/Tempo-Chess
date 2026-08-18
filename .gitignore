@@ -6,3 +6,22 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Expo / React Native
+.expo/
+.expo-shared/
+apps/mobile/android/app/build/
+apps/mobile/android/.gradle/
+apps/mobile/android/build/
+apps/mobile/ios/build/
+apps/mobile/ios/Pods/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+web-build/
+metro-cache/
+
+# Native model files (downloaded at runtime, never committed)
+*.gguf

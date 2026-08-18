@@ -1,6 +1,0 @@
-{
-  "name": "Tempo Learn Chess",
-  "description": "An offline-first AI chess coach for serious chess improvement that understands your playstyle, spots behavioural patterns, and teaches dynamically through games.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
