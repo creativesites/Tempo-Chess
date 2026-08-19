@@ -133,7 +133,102 @@ export class EvalShiftDetector {
   }
 
   /**
-   * Analyzes an updated position against the previous evaluation to detect significant shifts.
+   * Pure decision logic — takes already-computed evaluations and does no
+   * engine calls of its own. Callers that already have before/after
+   * evaluations (e.g. from their own move-classification pass) should call
+   * this directly instead of checkEvalShift(), which exists only for
+   * backward compatibility and duplicates engine work this avoids.
+   */
+  public static evaluateShift(
+    evalBeforeCp: number,
+    evalAfterCp: number,
+    bestMoveSanAfter: string,
+    fenAfter: string,
+    lastMove: ChessMove,
+    playerColor: Color,
+    playerModel: PlayerModel
+  ): EvalShiftData | null {
+    // Convert engine evaluations relative to playerColor
+    // In engine, positive eval is always White advantage
+    const playerSign = playerColor === 'w' ? 1 : -1;
+    const playerEvalBefore = evalBeforeCp * playerSign;
+    const playerEvalAfter = evalAfterCp * playerSign;
+
+    const evalDelta = playerEvalAfter - playerEvalBefore;
+    const isPlayerMove = lastMove.color === playerColor;
+    const userElo = playerModel.ratingEstimate || 1200;
+
+    // Check if shift meets significant threshold
+    if (Math.abs(evalDelta) < this.SIGNIFICANT_SHIFT_THRESHOLD_CP) {
+      return null;
+    }
+
+    // Determine category and shift type
+    let type: EvalShiftType = 'mistake';
+    let category: 'tactics' | 'king_safety' | 'hanging_piece' | 'fork_pin' | 'pawn_structure' | 'piece_activity' = 'tactics';
+
+    const chess = new Chess(fenAfter);
+
+    // Check for hanging piece or fork
+    if (lastMove.captured) {
+      category = 'tactics';
+    } else if (chess.inCheck()) {
+      category = 'king_safety';
+    } else if (lastMove.piece === 'p') {
+      category = 'pawn_structure';
+    }
+
+    if (isPlayerMove) {
+      if (evalDelta <= -250) {
+        type = 'blunder';
+      } else if (evalDelta <= -140) {
+        type = 'mistake';
+      } else if (evalDelta >= 200) {
+        type = 'breakthrough';
+      }
+    } else {
+      // Opponent move
+      if (evalDelta >= 200) {
+        type = 'missed_opportunity'; // Opponent blundered into player's hands
+      } else if (evalDelta <= -200) {
+        type = 'tactical_alarm'; // Opponent found a killer blow
+      }
+    }
+
+    const isNegativeForPlayer = evalDelta < 0;
+
+    const hintSentence = this.generateEloTailoredHint(
+      category,
+      isNegativeForPlayer,
+      userElo,
+      bestMoveSanAfter,
+      lastMove.piece,
+      lastMove.to
+    );
+
+    return {
+      id: `shift_${Date.now()}`,
+      type,
+      evalBeforeCp: playerEvalBefore,
+      evalAfterCp: playerEvalAfter,
+      deltaCp: evalDelta,
+      userElo,
+      hintSentence,
+      category,
+      suggestedMoveSan: bestMoveSanAfter,
+      fromSquare: lastMove.from,
+      toSquare: lastMove.to,
+      isPlayerMove,
+      timestamp: Date.now()
+    };
+  }
+
+  /**
+   * Analyzes an updated position against the previous evaluation to detect
+   * significant shifts. Kept for backward compatibility (the web prototype
+   * still calls this) — runs its own pair of engine analyze() calls. New
+   * callers that already have evaluations from elsewhere should call
+   * evaluateShift() directly instead to avoid duplicating that work.
    */
   public static async checkEvalShift(
     fenBefore: string,
@@ -143,83 +238,17 @@ export class EvalShiftDetector {
     playerModel: PlayerModel
   ): Promise<EvalShiftData | null> {
     try {
-      // 1. Run quick depth analysis for before and after
       const analysisBefore = await defaultChessEngine.analyze(fenBefore, { depth: 3 });
       const analysisAfter = await defaultChessEngine.analyze(fenAfter, { depth: 3 });
-
-      // Convert engine evaluations relative to playerColor
-      // In engine, positive eval is always White advantage
-      const playerSign = playerColor === 'w' ? 1 : -1;
-      const playerEvalBefore = analysisBefore.evaluationCp * playerSign;
-      const playerEvalAfter = analysisAfter.evaluationCp * playerSign;
-
-      const evalDelta = playerEvalAfter - playerEvalBefore;
-      const isPlayerMove = lastMove.color === playerColor;
-      const userElo = playerModel.ratingEstimate || 1200;
-
-      // Check if shift meets significant threshold
-      if (Math.abs(evalDelta) < this.SIGNIFICANT_SHIFT_THRESHOLD_CP) {
-        return null;
-      }
-
-      // Determine category and shift type
-      let type: EvalShiftType = 'mistake';
-      let category: 'tactics' | 'king_safety' | 'hanging_piece' | 'fork_pin' | 'pawn_structure' | 'piece_activity' = 'tactics';
-
-      const chess = new Chess(fenAfter);
-
-      // Check for hanging piece or fork
-      if (lastMove.captured) {
-        category = 'tactics';
-      } else if (chess.inCheck()) {
-        category = 'king_safety';
-      } else if (lastMove.piece === 'p') {
-        category = 'pawn_structure';
-      }
-
-      if (isPlayerMove) {
-        if (evalDelta <= -250) {
-          type = 'blunder';
-        } else if (evalDelta <= -140) {
-          type = 'mistake';
-        } else if (evalDelta >= 200) {
-          type = 'breakthrough';
-        }
-      } else {
-        // Opponent move
-        if (evalDelta >= 200) {
-          type = 'missed_opportunity'; // Opponent blundered into player's hands
-        } else if (evalDelta <= -200) {
-          type = 'tactical_alarm'; // Opponent found a killer blow
-        }
-      }
-
-      const isNegativeForPlayer = evalDelta < 0;
-
-      const hintSentence = this.generateEloTailoredHint(
-        category,
-        isNegativeForPlayer,
-        userElo,
+      return this.evaluateShift(
+        analysisBefore.evaluationCp,
+        analysisAfter.evaluationCp,
         analysisAfter.bestMoveSan,
-        lastMove.piece,
-        lastMove.to
+        fenAfter,
+        lastMove,
+        playerColor,
+        playerModel
       );
-
-      return {
-        id: `shift_${Date.now()}`,
-        type,
-        evalBeforeCp: playerEvalBefore,
-        evalAfterCp: playerEvalAfter,
-        deltaCp: evalDelta,
-        userElo,
-        hintSentence,
-        category,
-        suggestedMoveSan: analysisAfter.bestMoveSan,
-        fromSquare: lastMove.from,
-        toSquare: lastMove.to,
-        isPlayerMove,
-        timestamp: Date.now()
-      };
     } catch (e) {
       console.error('Error analyzing eval shift:', e);
       return null;

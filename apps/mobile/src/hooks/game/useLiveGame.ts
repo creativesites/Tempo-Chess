@@ -4,6 +4,7 @@ import {
   CHESS_BOTS,
   ChessGameWrapper,
   DEFAULT_BOT,
+  NativeChessEngine,
   OfflineChessEngine,
   defaultChessEngine,
 } from '@tempo/chess';
@@ -12,12 +13,18 @@ import { EvalShiftData, EvalShiftDetector } from '@tempo/game-review';
 import { createEmptyPlayerModel, PlayerModel } from '@tempo/player-model';
 import { ChessMove, Color, GameContext, OpeningContext, PieceSymbol, Square } from '@tempo/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { InteractionManager } from 'react-native';
 
+import { ChessEngineBackend, getActiveChessEngineBackend, getChessEngine } from '@/native-chess-engine';
 import { getPlayerModel, recordGameResult, saveGame, setSetting, SettingsKeys } from '@/storage';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const TIME_CONTROL_SECONDS = 600;
 const ANALYSIS_DEPTH = 3;
+/** Shallower search on the synchronous JS-thread fallback engine — that
+ * path is used on web and on devices where native Stockfish failed to
+ * init, precisely the cases most likely to be lower-end. */
+const FALLBACK_ANALYSIS_DEPTH = 2;
 
 export type GameResult = 'win' | 'loss' | 'draw';
 
@@ -42,6 +49,35 @@ function toWhitePerspective(evalCp: number, fen: string): number {
 export function useLiveGame(playerName: string) {
   const wrapperRef = useRef(new ChessGameWrapper());
   const processingRef = useRef(false);
+
+  // Resolved once (native Stockfish if it initializes, the TS fallback
+  // otherwise) and reused for every analysis call — see
+  // @/native-chess-engine. Never used for bot move *selection*, which
+  // stays on OfflineChessEngine so bot personalities (blunder rates,
+  // opening books) keep working; only for the before/after evaluations
+  // used to classify moves and detect eval shifts.
+  const engineRef = useRef<NativeChessEngine | null>(null);
+  const engineBackendRef = useRef<ChessEngineBackend | null>(null);
+  const engineReadyPromiseRef = useRef<Promise<NativeChessEngine> | null>(null);
+
+  const ensureEngine = useCallback(async (): Promise<NativeChessEngine> => {
+    if (engineRef.current) return engineRef.current;
+    if (!engineReadyPromiseRef.current) engineReadyPromiseRef.current = getChessEngine();
+    const engine = await engineReadyPromiseRef.current;
+    engineRef.current = engine;
+    engineBackendRef.current = getActiveChessEngineBackend();
+    return engine;
+  }, []);
+
+  useEffect(() => {
+    ensureEngine().catch((e) => console.error('Failed to resolve chess engine', e));
+  }, [ensureEngine]);
+
+  // Caches the most recent position's evaluation so consecutive moves
+  // don't re-analyze a FEN the previous move's "after" analysis already
+  // covered — move N's "before" is always move N-1's "after". Cleared on
+  // takeback, since the cached fen would no longer match the position.
+  const analysisCacheRef = useRef<{ fen: string; evaluationCp: number; bestMoveSan: string } | null>(null);
 
   const [fen, setFen] = useState(START_FEN);
   const [playerColor, setPlayerColor] = useState<Color>('w');
@@ -172,33 +208,84 @@ export function useLiveGame(playerName: string) {
   );
 
   /**
-   * Runs real engine analysis before/after the move to get a genuine
-   * classification (never a placeholder), then evaluates coaching
-   * opportunities — gated to the player's own moves only, see the
-   * @tempo/coaching fix: the coach must never praise or scold the player
-   * for a move the bot opponent made.
+   * Analyzes a position, reusing the previous move's "after" evaluation
+   * when the requested fen matches it (move N's "before" is always move
+   * N-1's "after" — recomputing it is pure waste) and deferring the
+   * actual search until after any pending interaction/animation when
+   * running on the synchronous JS-thread fallback engine, so the move's
+   * own render commits before the JS thread gets tied up.
+   */
+  const analyzeCached = useCallback(
+    async (fen: string) => {
+      if (analysisCacheRef.current?.fen === fen) {
+        return analysisCacheRef.current;
+      }
+
+      const engine = await ensureEngine();
+      const isFallback = engineBackendRef.current === 'fallback_ts_engine';
+      const depth = isFallback ? FALLBACK_ANALYSIS_DEPTH : ANALYSIS_DEPTH;
+      const run = () => engine.analyze(fen, { depth });
+
+      const result = isFallback
+        ? await new Promise<Awaited<ReturnType<typeof run>>>((resolve, reject) => {
+            InteractionManager.runAfterInteractions(() => {
+              run().then(resolve, reject);
+            });
+          })
+        : await run();
+
+      const cached = { fen, evaluationCp: result.evaluationCp, bestMoveSan: result.bestMoveSan };
+      analysisCacheRef.current = cached;
+      return cached;
+    },
+    [ensureEngine]
+  );
+
+  /**
+   * Classifies the move and checks for a coaching-worthy eval shift, then
+   * evaluates coaching opportunities — gated to the player's own moves
+   * only, see the @tempo/coaching fix: the coach must never praise or
+   * scold the player for a move the bot opponent made.
+   *
+   * Analysis is skipped entirely for moves that are still known opening
+   * theory (identifyOpening() still resolves after this move) — the
+   * highest-frequency, lowest-value phase to be spending engine time on,
+   * right when first-impression responsiveness matters most.
    */
   const enrichAndReactToMove = useCallback(
     async (rawMove: ChessMove, fenBefore: string, historyBeforeThisMove: ChessMove[]) => {
-      let enrichedMove = rawMove;
-      try {
-        const [before, after] = await Promise.all([
-          defaultChessEngine.analyze(fenBefore, { depth: ANALYSIS_DEPTH }),
-          defaultChessEngine.analyze(rawMove.fenAfter, { depth: ANALYSIS_DEPTH }),
-        ]);
-        const evalBefore = toWhitePerspective(before.evaluationCp, fenBefore);
-        const evalAfter = toWhitePerspective(after.evaluationCp, rawMove.fenAfter);
-        const classification = OfflineChessEngine.classifyMove(evalBefore, evalAfter, rawMove.color === 'w', false);
-        enrichedMove = { ...rawMove, evalBefore, evalAfter, classification };
-      } catch (e) {
-        console.error('Move analysis failed', e);
+      const detectedOpening = wrapperRef.current.identifyOpening();
+      if (detectedOpening) setCurrentOpening(detectedOpening);
+
+      let enrichedMove: ChessMove = rawMove;
+      let evalShift: EvalShiftData | null = null;
+
+      if (detectedOpening) {
+        enrichedMove = { ...rawMove, classification: 'book' };
+      } else {
+        try {
+          const before = await analyzeCached(fenBefore);
+          const after = await analyzeCached(rawMove.fenAfter);
+          const evalBefore = toWhitePerspective(before.evaluationCp, fenBefore);
+          const evalAfter = toWhitePerspective(after.evaluationCp, rawMove.fenAfter);
+          const classification = OfflineChessEngine.classifyMove(evalBefore, evalAfter, rawMove.color === 'w', false);
+          enrichedMove = { ...rawMove, evalBefore, evalAfter, classification };
+          evalShift = EvalShiftDetector.evaluateShift(
+            before.evaluationCp,
+            after.evaluationCp,
+            after.bestMoveSan,
+            rawMove.fenAfter,
+            enrichedMove,
+            playerColor,
+            playerModel
+          );
+        } catch (e) {
+          console.error('Move analysis failed', e);
+        }
       }
 
       const updatedHistory = [...historyBeforeThisMove, enrichedMove];
       setMoveHistory(updatedHistory);
-
-      const detectedOpening = wrapperRef.current.identifyOpening();
-      if (detectedOpening) setCurrentOpening(detectedOpening);
 
       if (enrichedMove.color === playerColor) {
         const ctx = buildGameContext(updatedHistory);
@@ -206,15 +293,11 @@ export function useLiveGame(playerName: string) {
         if (opportunity) setActiveIntervention(opportunity);
       }
 
-      EvalShiftDetector.checkEvalShift(fenBefore, enrichedMove.fenAfter, enrichedMove, playerColor, playerModel).then(
-        (shift) => {
-          if (shift) setActiveEvalShift(shift);
-        }
-      );
+      if (evalShift) setActiveEvalShift(evalShift);
 
       return updatedHistory;
     },
-    [buildGameContext, playerColor, playerModel]
+    [analyzeCached, buildGameContext, playerColor, playerModel]
   );
 
   const checkGameOver = useCallback(
@@ -321,6 +404,9 @@ export function useLiveGame(playerName: string) {
     setLastMove(newLast ? { from: newLast.from, to: newLast.to } : null);
     setActiveIntervention(null);
     setActiveEvalShift(null);
+    // The cached "after" eval no longer corresponds to the current
+    // position now that a move's been undone.
+    analysisCacheRef.current = null;
   }, [isGameActive, moveHistory, playerColor]);
 
   const resign = useCallback(() => {
@@ -344,6 +430,8 @@ export function useLiveGame(playerName: string) {
       setSummary(null);
       setPlayerTimeSec(TIME_CONTROL_SECONDS);
       setOpponentTimeSec(TIME_CONTROL_SECONDS);
+      // Starting fresh — any cached eval belongs to the previous game's position.
+      analysisCacheRef.current = null;
       if (bot) {
         setSelectedBot(bot);
         setSetting(SettingsKeys.SELECTED_BOT_ID, bot.id).catch((e) => console.error('Failed to persist selected bot', e));
