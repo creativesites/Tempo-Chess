@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -114,6 +114,19 @@ export default function ProfileScreen() {
             </ThemedText>
           </View>
         </View>
+
+        {/* Temporary dev entry point for the Skia board-rewrite smoke
+            test (Phase B) — remove once Phase C's Canvas board ships. */}
+        <Pressable style={[styles.row, { borderColor: theme.border }]} onPress={() => router.push('/skia-test')}>
+          <Ionicons name="color-wand-outline" size={22} color={theme.textSecondary} />
+          <View style={styles.rowInfo}>
+            <ThemedText type="smallBold">Skia smoke test (dev)</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Verify the Skia canvas renders and responds to gestures on this device
+            </ThemedText>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+        </Pressable>
       </SafeAreaView>
     </ThemedView>
   );
